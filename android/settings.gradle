@@ -3,8 +3,8 @@ include ':@datalogic_react-native-datalogic-module'
 project(':@datalogic_react-native-datalogic-module').projectDir = new File(rootProject.projectDir, '../node_modules/@datalogic/react-native-datalogic-module/android')
 include ':@react-native-community_geolocation'
 project(':@react-native-community_geolocation').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-community/geolocation/android')
-include ':react-native-background-task'
-project(':react-native-background-task').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-background-task/android')
+// include ':react-native-background-task'
+// project(':react-native-background-task').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-background-task/android')
 apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
 include ':app'
 includeBuild('../node_modules/react-native-gradle-plugin')

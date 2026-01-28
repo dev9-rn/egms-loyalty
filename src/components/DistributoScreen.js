@@ -6,7 +6,7 @@ import { URL, HEADER, APIKEY, ACCESSTOKEN } from '../App';
 import { strings } from '../locales/i18n';
 import Loader from '../Utility/Loader';
 import Modal from "react-native-modal";
-import { Dropdown } from 'react-native-material-dropdown';
+import { Dropdown } from 'react-native-material-dropdown-v2';
 import AsyncStorage from '@react-native-community/async-storage';
 
 var data = [{

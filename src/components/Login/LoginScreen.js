@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import {
   StatusBar,
   Button,
@@ -24,36 +24,34 @@ import {
   Title,
   Icon,
 } from 'native-base';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import LinearGradient from 'react-native-linear-gradient';
 import LoginService from '../../services/LoginService/LoginService';
 import Loader from '../../Utility/Loader';
 import * as utilities from '../../Utility/utilities';
 import * as app from '../../App';
 import Modal from 'react-native-modal';
-import {URL, HEADER, APIKEY, ACCESSTOKEN} from '../../App';
+import { URL, HEADER, APIKEY, ACCESSTOKEN } from '../../App';
 import SplashScreen from 'react-native-splash-screen';
-import {connect} from 'react-redux';
-import {strings} from '../../locales/i18n';
+import { connect } from 'react-redux';
+import { strings } from '../../locales/i18n';
 import I18n from 'react-native-i18n';
-import {setLoginData} from '../../Redux/Actions/InstituteActions';
-import {bindActionCreators} from 'redux';
+import { setLoginData } from '../../Redux/Actions/InstituteActions';
+import { bindActionCreators } from 'redux';
 import MyColors from '../../Utility/Colors';
 import AsyncStorage from '@react-native-community/async-storage';
-import {ScrollView} from 'react-navigation';
+import { ScrollView } from 'react-navigation';
 import * as Animatable from 'react-native-animatable';
-import DeviceNumber from 'react-native-device-number';
-import {PERMISSIONS, RESULTS, check, request} from 'react-native-permissions';
-import {IOS} from 'react-native-permissions/lib/typescript/constants';
+import { PERMISSIONS, RESULTS, request } from 'react-native-permissions';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 class LoginScreen extends Component {
-  //carpenter login screen
   constructor(props) {
     super(props);
 
     this.state = {
-      mobileNumber: '', //9999999999
-      password: '', //Test@1234
+      mobileNumber: '',
+      password: '',
       borderBottomColorPassword: '#757575',
       borderBottomColorUserName: '#757575',
       loading: false,
@@ -66,27 +64,36 @@ class LoginScreen extends Component {
       ispass: false,
       isForgot: false,
       showPW: true,
+      isFakeReportModalVisible: false,
+      description: '',
+      srNo: '',
+      reportMobileNumber: '',
+      reporterName: '',
+      language: 'en',
+      selectedImage: null,
+      phoneNumberError: '',
+      isGalleryPermissionGranted: false,
+      isPermissionGranted: false,
     };
   }
+
   toggleModal = () => {
-    this.setState({isModalVisible: !this.state.isModalVisible});
+    this.setState({ isModalVisible: !this.state.isModalVisible });
   };
+
   componentWillMount() {
     this.getUserData();
   }
-  // componentWillUnmount() {
-
-  // }
 
   componentDidMount() {
     SplashScreen.hide();
     this.requestLocationPermission();
+    this.requestGalleryPermission();
+    this._requestPermission();
     BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
     this.willFocusSubscription = this.props.navigation.addListener(
       'willFocus',
-      payload => {
-        this.setState(this.state);
-      },
+      () => this.setState(this.state),
     );
   }
 
@@ -106,64 +113,46 @@ class LoginScreen extends Component {
       ispass: false,
       isForgot: false,
       showPW: true,
+      isFakeReportModalVisible: false,
+      description: '',
+      srNo: '',
+      reportMobileNumber: '',
+      reporterName: '',
+      language: 'en',
+      selectedImage: null,
       phoneNumberError: '',
+      isGalleryPermissionGranted: false,
     });
-    this.willFocusSubscription.remove();
+    this.willFocusSubscription?.remove();
     BackHandler.removeEventListener('hardwareBackPress', this.handleBackPress);
   }
 
   handleBackPress = () => {
-    // Alert.alert(
-    //   'Exit App',
-    //   'Are you sure you want to exit this app',
-    //   [
-    //     {text: 'NO', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
-    //     {text: 'YES', onPress: () => { BackHandler.exitApp(); }},
-    //   ],
-    //   { cancelable: false }
-    // );
-    // BackHandler.exitApp();
-    // this.props.navigation.navigate('MainScreen');
     BackHandler.exitApp();
     return true;
   };
 
   async closeActivityIndicator() {
-    await setTimeout(() => {
-      this.setState({loading: false});
-    });
+    setTimeout(() => {
+      this.setState({ loading: false });
+    }, 300);
   }
-  getAsyncData = async () => {
-    fcmtoke = await AsyncStorage.setItem(
-      'FCMTOKEN',
-      JSON.stringify({fcmToken: fcmToken}),
-    );
-  };
-  _handleNotificationOpen = notifData => {
-    console.log('notifData :  ', notifData);
-  };
+
   async getUserData() {
-    await AsyncStorage.getItem('USERDATA', (err, result) => {
-      var lData = JSON.parse(result);
-      if (lData) {
-        if (lData.data) {
-          console.log(
-            '=-=-=-=-][][][][][][][][][][][][][][][][][][][][][][]=-=-=-=-=-=-=-=-=-=>>>>>>>>>??????????????????',
-          );
-          console.log(lData.data);
-          this.props.setLoginData(lData.data);
-          app.ACCESSTOKEN = lData.data.accesstoken;
-          this.props.navigation.navigate('HomeScreen');
-        }
-      }
-    });
+    const result = await AsyncStorage.multiGet(['USERDATA']);
+    const lData = JSON.parse(result[0][1]);
+    if (lData?.data) {
+      this.props.setLoginData(lData.data);
+      app.ACCESSTOKEN = lData.data.accesstoken;
+      this.props.navigation.navigate('HomeScreen');
+    }
   }
 
   _validateEmail() {
     let lEmail = this.state.email;
     let res = utilities.checkEmail(lEmail);
     if (!res) {
-      this.setState({phoneNumberError: strings('login.emailInvalid')});
+      this.setState({ phoneNumberError: strings('login.emailInvalid') });
     }
     return res;
   }
@@ -191,7 +180,7 @@ class LoginScreen extends Component {
     formData.append('password', this.state.password);
     console.log(formData);
 
-    this.setState({loading: true});
+    this.setState({ loading: true });
 
     var lUrl = URL + 'loginDist';
     console.log(lUrl);
@@ -205,7 +194,7 @@ class LoginScreen extends Component {
       body: formData,
     }).then(res => {
       res.json().then(response => {
-        this.setState({mobileNumber: '', showHideMobile: false});
+        this.setState({ mobileNumber: '', showHideMobile: false });
         this.closeActivityIndicator();
 
         if (!response) {
@@ -321,7 +310,7 @@ class LoginScreen extends Component {
     console.log('calling login');
     let lMobileNumber = this.state.mobileNumber;
     // alert(this.state.mobileNumber);
-    this.setState({loading: true});
+    this.setState({ loading: true });
     const formData = new FormData();
     console.log(formData);
     // formData.append('mobileNo', lMobileNumber);
@@ -337,11 +326,11 @@ class LoginScreen extends Component {
     var lResponseData = await loginApiObj.getRespData();
     console.log(lResponseData);
 
-    this.setState({mobileNumber: ''});
+    this.setState({ mobileNumber: '' });
     this.closeActivityIndicator();
 
     if (!lResponseData) {
-      this.setState({loading: true});
+      this.setState({ loading: true });
       this.closeActivityIndicator();
       utilities.showToastMsg('Something went wrong. Please try again later');
       return true;
@@ -352,7 +341,7 @@ class LoginScreen extends Component {
       lResponseData.status == 503 ||
       lResponseData.status == 451
     ) {
-      this.setState({loading: true});
+      this.setState({ loading: true });
       this.closeActivityIndicator();
       utilities.showToastMsg(lResponseData.message);
     } else if (lResponseData.status == 403) {
@@ -361,7 +350,7 @@ class LoginScreen extends Component {
       AsyncStorage.clear();
       return;
     } else if (lResponseData.status == 200) {
-      this.setState({loading: true});
+      this.setState({ loading: true });
       this.closeActivityIndicator();
       // utilities.showToastMsg('OTP sent successfully');
       AsyncStorage.setItem('USERDATA', JSON.stringify(lResponseData));
@@ -379,7 +368,7 @@ class LoginScreen extends Component {
       // app.ACCESSTOKEN = lResponseData.data.accesstoken;
       // AsyncStorage.setItem('ACCESSTOKEN', lResponseData.data.accesstoken);
       try {
-        this.setState({password: ''});
+        this.setState({ password: '' });
         this.props.navigation.navigate('HomeScreen', {
           mobileNumber: lMobileNumber,
         });
@@ -395,7 +384,7 @@ class LoginScreen extends Component {
   //////////////
 
   async callOtpApi() {
-    this.setState({ispass: false});
+    this.setState({ ispass: false });
     let lMobileNumber = this.state.mobileNumber;
     const formData = new FormData();
 
@@ -410,7 +399,7 @@ class LoginScreen extends Component {
 
     // var loginApiObj = new LoginService();
 
-    this.setState({loading: true});
+    this.setState({ loading: true });
 
     var lUrl = URL + 'forgotPasswordCarpenter';
     console.log(lUrl);
@@ -426,7 +415,7 @@ class LoginScreen extends Component {
       .then(response => response.json())
       .then(resForOtp => {
         console.log(resForOtp);
-        this.setState({mobileNumber: ''});
+        this.setState({ mobileNumber: '' });
         this.closeActivityIndicator();
 
         if (!resForOtp) {
@@ -514,8 +503,251 @@ class LoginScreen extends Component {
     }
   }
 
+  _onPressButton1 = () => {
+    // this.setState({ isFakeReportModalVisible: true });
+   this.props.navigation.navigate('ReportScreen');
+  };
+
+  requestGalleryPermission = async () => {
+    try {
+      let permission;
+      if (Platform.OS === 'ios') {
+        permission = PERMISSIONS.IOS.PHOTO_LIBRARY;
+      } else {
+        permission = PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
+      }
+
+      const result = await request(permission);
+
+      if (result === RESULTS.GRANTED) {
+        this.setState({ isGalleryPermissionGranted: true });
+      } else {
+        this.setState({ isGalleryPermissionGranted: false });
+      }
+    } catch (err) {
+      console.warn('Permission request error:', err);
+    }
+  };
+
+  _requestPermission = async () => {
+    request(
+      Platform.OS === 'ios'
+        ? PERMISSIONS.IOS.CAMERA
+        : PERMISSIONS.ANDROID.CAMERA,
+    ).then(result => {
+      if (result == 'granted') {
+        this.setState({ isPermissionGranted: true });
+      }
+      // console.log(result)
+    });
+  };
+
+  imagePickerHandler = async type => {
+    try {
+      if (this.state.isPermissionGranted) {
+        if (type == 'capture') {
+          await launchCamera(
+            {
+              saveToPhotos: true,
+              mediaType: 'photo',
+              includeBase64: false,
+              includeExtra: true,
+            },
+            res => {
+              // console.log("===result res" , JSON.stringify(res , null,2))
+              if (res.didCancel) {
+                // alert("u have cancelled.")
+              } else if (res.error) {
+                // console.log("image pucker" , res.error)
+                alert('u have an error.');
+              } else {
+                // this.setState({
+                //   isImage: true,
+                //   pickedImage: { uri: res?.assets[0].uri, data: res?.assets[0] },
+                // });
+                this.setState({
+                  selectedImage: {
+                    uri: res?.assets[0].uri,
+                    data: res?.assets[0]
+                  },
+                });
+              }
+            },
+          );
+        } else {
+          await launchImageLibrary(
+            {
+              selectionLimit: 0,
+              mediaType: 'photo',
+              includeBase64: false,
+              includeExtra: true,
+            },
+            res => {
+              // console.log("===result res" , JSON.stringify(res , null,2))
+              if (res.didCancel) {
+                // alert("u have cancelled.")
+              } else if (res.error) {
+                // console.log("image pucker" , res.error)
+                alert('u have an error.');
+              } else {
+                // this.setState({
+                //   isImage: true,
+                //   pickedImage: { uri: res?.assets[0].uri, data: res?.assets[0] },
+                // });
+                this.setState({
+                  selectedImage: {
+                    uri: res?.assets[0].uri,
+                    data: res?.assets[0]
+                  },
+                });
+              }
+            },
+          );
+        }
+      } else {
+        Alert.alert('Need Camera Persmission ', '', [
+          {
+            text: 'Cancel',
+            onPress: () => console.log('Cancel Pressed'),
+          },
+          {
+            text: 'Open Setting',
+            onPress: () => {
+              this._openSettings();
+            },
+          },
+        ]);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+
+
+  pickImage = async () => {
+    if (!this.state.isGalleryPermissionGranted) {
+      Alert.alert(
+        'Permission Required',
+        'This app needs access to your gallery to select images.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open Settings',
+            onPress: () => Linking.openSettings(),
+          },
+        ],
+      );
+      return;
+    }
+
+    const options = {
+      mediaType: 'photo',
+      includeBase64: false,
+      includeExtra: true,
+      selectionLimit: 1,
+    };
+
+    launchImageLibrary(options, (res) => {
+      if (res.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (res.errorCode) {
+        console.log('ImagePicker Error: ', res.errorMessage);
+        Alert.alert('Error', res.errorMessage || 'Failed to pick image');
+      } else if (res.assets && res.assets.length > 0) {
+        const image = res.assets[0];
+        this.setState({
+          selectedImage: {
+            uri: image.uri,
+            type: image.type || 'image/jpeg',
+            name: image.fileName || `fake-report-${Date.now()}.jpg`,
+            data: image,
+          },
+        });
+      }
+    });
+  };
+
+
+
+  async sendReport() {
+    const {
+      description,
+      srNo,
+      reportMobileNumber,
+      reporterName,
+      language,
+      selectedImage,
+    } = this.state;
+
+    if (
+      !description.trim() ||
+      !srNo.trim() ||
+      !reportMobileNumber.trim() ||
+      !reporterName.trim() ||
+      !selectedImage
+    ) {
+      utilities.showToastMsg('Please fill all fields and select an image');
+      return;
+    }
+
+    this.setState({ loading: true });
+
+    const formData = new FormData();
+    formData.append('description', description);
+    formData.append('srNo', srNo);
+    formData.append('mobile_number', reportMobileNumber);
+    formData.append('reporter_name', reporterName);
+    formData.append('language', language);
+
+    if (selectedImage) {
+      formData.append('couponFile', {
+        uri: selectedImage.uri,
+        type: selectedImage.type,
+        name: selectedImage.name,
+      });
+    }
+
+    try {
+      const response = await fetch(
+        'https://seqrloyalty.com/egms/api/reportCouponCarpenterV1',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'multipart/form-data',
+            apikey: 'iWM(E?dV4M^bNaZeGbJsB2V(0Cjs};',
+          },
+          body: formData,
+        },
+      );
+
+      const result = await response.json();
+
+      this.setState({ loading: false });
+
+      if (result.status === 200) {
+        utilities.showToastMsg('Reported successfully');
+        this.setState({
+          isFakeReportModalVisible: false,
+          description: '',
+          srNo: '',
+          reportMobileNumber: '',
+          reporterName: '',
+          selectedImage: null,
+        });
+      } else {
+        utilities.showToastMsg(result.message || 'Failed to submit report');
+      }
+    } catch (error) {
+      this.setState({ loading: false });
+      utilities.showToastMsg('Network error. Please try again.');
+      console.error('Report submission error:', error);
+    }
+  }
+
   verifyBrandID = () => {
-    this.setState({loading: true});
+    this.setState({ loading: true });
     const formData = new FormData();
     formData.append('brandCode', this.state.brandCode);
     var lUrl = URL + 'validateBrand';
@@ -530,11 +762,11 @@ class LoginScreen extends Component {
     })
       .then(response => response.json())
       .then(responseJson => {
-        this.setState({loading: false});
+        this.setState({ loading: false });
         if (responseJson.status == 422) {
-          this.setState({brandCodeError: responseJson.message});
+          this.setState({ brandCodeError: responseJson.message });
         } else if (responseJson.status == 200) {
-          this.setState({brandCodeError: ''}, () => {
+          this.setState({ brandCodeError: '' }, () => {
             AsyncStorage.setItem(
               'BRANDCODE',
               JSON.stringify(responseJson.brand_id),
@@ -546,7 +778,7 @@ class LoginScreen extends Component {
         }
       })
       .catch(error => {
-        this.setState({loading: false});
+        this.setState({ loading: false });
         console.log(error);
       });
   };
@@ -633,11 +865,11 @@ class LoginScreen extends Component {
         'Location Permission Required',
         Platform.OS === 'android'
           ? 'To scan QR codes, please allow Location access.\n\n' +
-              'Go to:\nSettings > Apps > EGMS SeQR Loyalty > Permissions > Location > Allow all the time'
+          'Go to:\nSettings > Apps > EGMS SeQR Loyalty > Permissions > Location > Allow all the time'
           : 'To scan QR codes, please allow Location access.\n\n' +
-              'Go to:\nSettings > EGMS SeQR Loyalty > Location > Always',
+          'Go to:\nSettings > EGMS SeQR Loyalty > Location > Always',
         [
-          {text: 'Cancel', style: 'cancel'},
+          { text: 'Cancel', style: 'cancel' },
           {
             text: 'Open Settings',
             onPress: () => Linking.openSettings(),
@@ -647,10 +879,11 @@ class LoginScreen extends Component {
     }
   };
   render() {
+    const { selectedImage } = this.state;
     return (
       <KeyboardAwareScrollView
         extraScrollHeight={150}
-        contentContainerStyle={{alignContent: 'center', flex: 1}}
+        contentContainerStyle={{ alignContent: 'center', flex: 1 }}
         keyboardShouldPersistTaps={'handled'}
         style={styles.container}>
         <StatusBar
@@ -703,7 +936,7 @@ class LoginScreen extends Component {
                   }} style={{ marginLeft: -12, color: MyColors.distributorColor , fontWeight: 'bold', fontSize: 18 }}>{strings('login.public_login')}</Text>
                 </CardItem> */}
 
-            <View style={{paddingLeft: 0, paddingRight: 0, marginTop: 10}}>
+            <View style={{ paddingLeft: 0, paddingRight: 0, marginTop: 10 }}>
               {/* <View style={{ flexDirection: "row", flex: 1, alignItems: "center", ...styles.inputs}}>
               
                   <Icon onPress={() => this.setState({ showPW: !this.state.showPW })} type="FontAwesome" name="phone" style={{  fontSize: 18, color: MyColors.dealerColor, }} />
@@ -754,7 +987,7 @@ class LoginScreen extends Component {
                     <Text style={styles.buttonText}>Scan QR</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => this._onPressButton1()}>
+                <TouchableOpacity onPress={this._onPressButton1}>
                   <View style={styles.buttonLogin}>
                     <Text style={styles.buttonText}>Fake Product Report</Text>
                   </View>
@@ -769,14 +1002,14 @@ class LoginScreen extends Component {
                     </TouchableOpacity> */}
 
                 <Modal isVisible={this.state.isForgot}>
-                  <View style={{height: 300}}>
+                  <View style={{ height: 300 }}>
                     <Card style={styles.cardContainer}>
                       <CardItem header>
-                        <Text style={{textAlign: 'left', flex: 1}}>
+                        <Text style={{ textAlign: 'left', flex: 1 }}>
                           {strings('login.forgot_password')}?
                         </Text>
                         <TouchableOpacity
-                          onPress={() => this.setState({isForgot: false})}>
+                          onPress={() => this.setState({ isForgot: false })}>
                           <Icon
                             type="FontAwesome"
                             name="times"
@@ -794,7 +1027,7 @@ class LoginScreen extends Component {
                           borderBottomColor: 'grey',
                         }}
                       />
-                      <View style={{marginTop: 20}}>
+                      <View style={{ marginTop: 20 }}>
                         <Text>
                           Enter your Email ID No to reset your password:{' '}
                         </Text>
@@ -821,13 +1054,13 @@ class LoginScreen extends Component {
                             });
                           }}
                           onChangeText={mobileNumber =>
-                            this.setState({mobileNumber})
+                            this.setState({ mobileNumber })
                           }
                         />
-                        <View style={{marginTop: 40}}>
+                        <View style={{ marginTop: 40 }}>
                           <Button
                             onPress={() => {
-                              this.setState({isForgot: false}, () =>
+                              this.setState({ isForgot: false }, () =>
                                 this.callOtpApi(),
                               );
                             }}
@@ -841,7 +1074,7 @@ class LoginScreen extends Component {
                 </Modal>
 
                 <Modal isVisible={this.state.isModalVisible}>
-                  <View style={{height: 300}}>
+                  <View style={{ height: 300 }}>
                     <Card style={styles.cardContainer}>
                       <CardItem header>
                         <Text
@@ -876,7 +1109,7 @@ class LoginScreen extends Component {
                           borderBottomColor: 'grey',
                         }}
                       />
-                      <View style={{marginTop: 20}}>
+                      <View style={{ marginTop: 20 }}>
                         <Text>{strings('login.brandCode')} : </Text>
                         <TextInput
                           style={{
@@ -896,18 +1129,18 @@ class LoginScreen extends Component {
                               borderBottomColorUserName: '#757575',
                             });
                           }}
-                          onChangeText={brandCode => this.setState({brandCode})}
+                          onChangeText={brandCode => this.setState({ brandCode })}
                         />
                         {this.state.brandCodeError ? (
-                          <View style={{marginTop: 15, marginLeft: 20}}>
-                            <Text style={{color: 'red'}}>
+                          <View style={{ marginTop: 15, marginLeft: 20 }}>
+                            <Text style={{ color: 'red' }}>
                               {this.state.brandCodeError}
                             </Text>
                           </View>
                         ) : (
                           <View></View>
                         )}
-                        <View style={{marginTop: 40}}>
+                        <View style={{ marginTop: 40 }}>
                           <Button
                             title={strings('login.profileScreenSubmit')}
                             disabled={this.state.brandCode ? false : true}
@@ -918,6 +1151,93 @@ class LoginScreen extends Component {
                     </Card>
                   </View>
                 </Modal>
+
+                <Modal isVisible={this.state.isFakeReportModalVisible}>
+                  <View style={{ height: 500 }}>
+                    <Card style={styles.cardContainer}>
+                      <CardItem header>
+                        <Text style={{ textAlign: 'left', flex: 1 }}>
+                          Fake Product Report
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => this.setState({ isFakeReportModalVisible: false })}>
+                          <Icon
+                            type="FontAwesome"
+                            name="times"
+                            style={{
+                              fontSize: 20,
+                              color: 'black',
+                              paddingLeft: 13,
+                            }}
+                          />
+                        </TouchableOpacity>
+                      </CardItem>
+                      <View
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: 'grey',
+                        }}
+                      />
+                      <ScrollView style={{ marginTop: 20 }}>
+                        <Text>Description:</Text>
+                        <TextInput
+                          style={styles.inputs}
+                          value={this.state.description}
+                          placeholder="Enter description"
+                          onChangeText={description => this.setState({ description })}
+                        />
+                        <Text>Serial No:</Text>
+                        <TextInput
+                          style={styles.inputs}
+                          value={this.state.srNo}
+                          placeholder="Enter serial number"
+                          onChangeText={srNo => this.setState({ srNo })}
+                        />
+                        <Text>Mobile Number:</Text>
+                        <TextInput
+                          style={styles.inputs}
+                          value={this.state.reportMobileNumber}
+                          keyboardType="phone-pad"
+                          placeholder="Enter mobile number"
+                          onChangeText={reportMobileNumber => this.setState({ reportMobileNumber })}
+                        />
+                        <Text>Reporter Name:</Text>
+                        <TextInput
+                          style={styles.inputs}
+                          value={this.state.reporterName}
+                          placeholder="Enter reporter name"
+                          onChangeText={reporterName => this.setState({ reporterName })}
+                        />
+                        <Text>Language:</Text>
+                        <TextInput
+                          style={styles.inputs}
+                          value={this.state.language}
+                          placeholder="Enter language (e.g., en)"
+                          onChangeText={language => this.setState({ language })}
+                        />
+                        <Text>Coupon Image:</Text>
+                        <TouchableOpacity onPress={this.imagePickerHandler}>
+                          <View style={styles.buttonLogin}>
+                            <Text style={styles.buttonText}>Pick from Gallery</Text>
+                          </View>
+                        </TouchableOpacity>
+                        {selectedImage && (
+                          <Image
+                            source={{ uri: selectedImage.uri }}
+                            style={{ width: 100, height: 100, marginTop: 10 }}
+                          />
+                        )}
+                        <View style={{ marginTop: 20 }}>
+                          <Button
+                            onPress={() => this.sendReport()}
+                            title="Submit Report"
+                          />
+                        </View>
+                      </ScrollView>
+                    </Card>
+                  </View>
+                </Modal>
+
                 {/* <View>
                     <TouchableOpacity style={{ marginTop: 15, paddingLeft: 10 }} >
                       <Text style={{ color: '#1784C7', fontSize: 12 }} onPress={this.toggleModal}>{strings('login.clickHereToSignUp')}</Text>
@@ -991,6 +1311,7 @@ const styles = StyleSheet.create({
     borderColor: MyColors.distributorColor,
     paddingLeft: 20,
     fontSize: 18,
+    marginBottom: 10,
   },
   buttonLogin: {
     marginTop: 10,

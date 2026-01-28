@@ -17,7 +17,7 @@ import { connect } from 'react-redux';
 import { setLanguage, setCounterValue, setCounter1Value, enableDarkTheme, fingerPrintEnableAuth, setMechanicData } from '../Redux/Actions/VerifierActions';
 import { clearInsti } from '../Redux/Actions/InstituteActions'
 import moment from 'moment';
-import { Dropdown } from 'react-native-material-dropdown';
+import { Dropdown } from 'react-native-material-dropdown-v2';
 import AsyncStorage from '@react-native-community/async-storage';
 import { Linking } from 'react-native';
 

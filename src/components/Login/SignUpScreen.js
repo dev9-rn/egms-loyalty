@@ -9,7 +9,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Loader from '../../Utility/Loader';
 import * as utilities from '../../Utility/utilities';
 import * as app from '../../App';
-import { Dropdown } from 'react-native-material-dropdown';
+// import { Dropdown } from 'react-native-material-dropdown';
 var _ = require('lodash');
 import RNPicker from "rn-modal-picker";
 import { strings } from '../../locales/i18n';

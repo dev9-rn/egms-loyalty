@@ -5,7 +5,7 @@ import { URL, APIKEY, ACCESSTOKEN } from '../../App';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import Loader from '../../Utility/Loader';
 import { Col, Row, Grid } from 'react-native-easy-grid';
-import { Dropdown } from 'react-native-material-dropdown';
+// import { Dropdown } from 'react-native-material-dropdown';
 import LinearGradient from 'react-native-linear-gradient';
 import * as utilities from '../../Utility/utilities';
 var _ = require('lodash');

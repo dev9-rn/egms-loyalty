@@ -8,7 +8,7 @@ import * as utilities from '../../Utility/utilities';
 import App, * as app from '../../App';
 import { URL, APIKEY  } from '../../App';
 import { Col, Grid, Row } from "react-native-easy-grid";
-import { Dropdown } from 'react-native-material-dropdown';
+// import { Dropdown } from 'react-native-material-dropdown';
 var _ = require('lodash');
 import SplashScreen from 'react-native-splash-screen';
 import { strings } from '../../locales/i18n';

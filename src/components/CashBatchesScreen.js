@@ -11,7 +11,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { strings } from '../locales/i18n';
 import { connect } from 'react-redux';
 var _ = require('lodash');
-import { Dropdown } from 'react-native-material-dropdown';
+// import { Dropdown } from 'react-native-material-dropdown-v2';
 import Modal from "react-native-modal";
 import RNFetchBlob from 'rn-fetch-blob';
 import { writeFile, readFile } from 'react-native-fs';
