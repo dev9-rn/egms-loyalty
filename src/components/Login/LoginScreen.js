@@ -936,49 +936,7 @@ class LoginScreen extends Component {
                   }} style={{ marginLeft: -12, color: MyColors.distributorColor , fontWeight: 'bold', fontSize: 18 }}>{strings('login.public_login')}</Text>
                 </CardItem> */}
 
-            <View style={{ paddingLeft: 0, paddingRight: 0, marginTop: 10 }}>
-              {/* <View style={{ flexDirection: "row", flex: 1, alignItems: "center", ...styles.inputs}}>
-              
-                  <Icon onPress={() => this.setState({ showPW: !this.state.showPW })} type="FontAwesome" name="phone" style={{  fontSize: 18, color: MyColors.dealerColor, }} />
-                        
-                    <TextInput
-                  
-                      style ={{ marginLeft:5,width : '90%'}}
-                      value={this.state.mobileNumber}
-                      maxLength={10}
-                      keyboardType="number-pad"
-                      placeholder={`+254 ${strings('login.paymentOptions_screen_placeholder_mobileno')}`}
-                      placeholderTextColor={ MyColors.greyColor}
-                      onFocus={() => { this.setState({ borderBottomColorUserName: '#50CAD0' }) }}
-                      onBlur={() => { this.setState({ borderBottomColorUserName: '#757575' }); }}
-                      onChangeText={(mobileNumber) => this.setState({ mobileNumber })}
-                    />
-                 
-                  </View> */}
-
-              {/* <View style={{ flexDirection: "row", flex: 1, alignItems: "center", marginTop:10,  ...styles.inputs }}>
-                  {this.state.showPW ?
-                              <Icon onPress={() => this.setState({ showPW: !this.state.showPW })} type="FontAwesome" name="eye-slash" style={{  fontSize: 18, color: MyColors.dealerColor, }} />
-                              :
-                              <Icon onPress={() => this.setState({ showPW: !this.state.showPW })} type="FontAwesome" name="eye" style={{  fontSize: 18, color: MyColors.dealerColor, }} />
-                         }
-                        <TextInput 
-                         
-                          style ={{ marginLeft:5,width : '90%'}}
-                          value={this.state.password}
-                          placeholder={strings('login.distriPass')}
-                          placeholderTextColor={ MyColors.greyColor}
-                          secureTextEntry={this.state.showPW}
-                          onFocus={() => { this.setState({ borderBottomColorUserName: '#50CAD0' }) }}
-                          onBlur={() => { this.setState({ borderBottomColorUserName: '#757575' }); }}
-                          onChangeText={(password) => this.setState({ password: password })}
-                        />
-                      </View> */}
-
-              {/* <TouchableOpacity onPress={() => this.setState({ isForgot: true })}>
-                    <Text style={{ color: "blue", textAlign: "right", fontSize: 16, opacity: 0.6, margin:10}}>{strings('login.forgot_password')} </Text>
-                  </TouchableOpacity> */}
-            </View>
+            
 
             <View>
               <Content padder>
@@ -989,9 +947,13 @@ class LoginScreen extends Component {
                 </TouchableOpacity>
                 <TouchableOpacity onPress={this._onPressButton1}>
                   <View style={styles.buttonLogin}>
-                    <Text style={styles.buttonText}>Fake Product Report</Text>
+                    <Text style={styles.buttonText}>Report Fake Product</Text>
                   </View>
                 </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => this.props.navigation.navigate("MainScreen")}>
+                                        <Text style={{ color: MyColors.distributorColor , marginTop: 20, fontSize: 16, textAlign: "center", textDecorationLine: 'underline' }}>{strings('login.back_mainscreen')}</Text>
+                                    </TouchableOpacity>
 
                 {/* <TouchableOpacity onPress={() => this.props.navigation.navigate("DealerSignupScreen")}>
                         <Text style={{ color: MyColors.distributorColor , marginTop: 20, fontSize: 16, textAlign: "center", textDecorationLine: 'underline' }}>{strings('login.new_user')}</Text>
@@ -1157,7 +1119,7 @@ class LoginScreen extends Component {
                     <Card style={styles.cardContainer}>
                       <CardItem header>
                         <Text style={{ textAlign: 'left', flex: 1 }}>
-                          Fake Product Report
+                          Report Fake Product
                         </Text>
                         <TouchableOpacity
                           onPress={() => this.setState({ isFakeReportModalVisible: false })}>
@@ -1318,6 +1280,7 @@ const styles = StyleSheet.create({
     backgroundColor: MyColors.distributorColor,
     borderRadius: 20,
     flex: 1,
+    marginBottom: 10,
   },
   buttonLogin1: {
     marginTop: 30,

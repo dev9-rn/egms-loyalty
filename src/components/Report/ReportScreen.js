@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import {
   Alert,
   StatusBar,
@@ -22,18 +22,18 @@ import {
   Text,
   Button,
 } from 'native-base';
-import { URL, APIKEY, ACCESSTOKEN } from '../../App';
+import {URL, APIKEY, ACCESSTOKEN} from '../../App';
 import Loader from '../../Utility/Loader';
-import { Col, Row, Grid } from 'react-native-easy-grid';
-import { strings } from '../../locales/i18n';
-import { connect } from 'react-redux';
+import {Col, Row, Grid} from 'react-native-easy-grid';
+import {strings} from '../../locales/i18n';
+import {connect} from 'react-redux';
 import RNFetchBlob from 'rn-fetch-blob';
 import MyColors from '../../Utility/Colors';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import AndroidOpenSettings from 'react-native-android-open-settings';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { PERMISSIONS, request } from 'react-native-permissions';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import {PERMISSIONS, request} from 'react-native-permissions';
 
 class ReportScreen extends Component {
   state = {
@@ -47,20 +47,25 @@ class ReportScreen extends Component {
     reporter_name: '',
     distributorId: '',
     carpenterId: '',
-    loaderText: 'Loading...',
+    loaderText: 'Please Wait...',
     showHideLoading: false,
     accesstoken: '',
     isPermissionGranted: false,
     isStoragePermissionGranted: false,
   };
   getDataFromAPi = () => {
+    console.log('Validating form before submission...');
+    if (!this._validateForm()) {
+      return; // ❌ stop here if validation fails
+    }
+
     AsyncStorage.multiGet(['USERDATA', 'ACCESSTOKEN'])
       .catch(err => {
         alert('Error');
       })
       .then(res => {
         var lData = JSON.parse(res[0][1]);
-        this.setState({ accesstoken: res[1][1] });
+        this.setState({accesstoken: res[1][1]});
         this._onPressSendButton();
       });
   };
@@ -77,28 +82,32 @@ class ReportScreen extends Component {
         : PERMISSIONS.ANDROID.CAMERA,
     ).then(result => {
       if (result == 'granted') {
-        this.setState({ isPermissionGranted: true });
+        this.setState({isPermissionGranted: true});
       }
       // console.log(result)
     });
   };
 
   _requestStoragePermission = async () => {
-    const permission = Platform.OS === 'ios'
-      ? PERMISSIONS.IOS.PHOTO_LIBRARY
-      : Platform.Version >= 33
+    const permission =
+      Platform.OS === 'ios'
+        ? PERMISSIONS.IOS.PHOTO_LIBRARY
+        : Platform.Version >= 33
         ? PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
         : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
     request(permission).then(result => {
       if (result == 'granted') {
-        this.setState({ isStoragePermissionGranted: true });
+        this.setState({isStoragePermissionGranted: true});
       }
     });
   };
 
   imagePickerHandler = async type => {
     try {
-      if (this.state.isPermissionGranted && (type === 'capture' || this.state.isStoragePermissionGranted)) {
+      if (
+        this.state.isPermissionGranted &&
+        (type === 'capture' || this.state.isStoragePermissionGranted)
+      ) {
         if (type == 'capture') {
           await launchCamera(
             {
@@ -117,7 +126,7 @@ class ReportScreen extends Component {
               } else {
                 this.setState({
                   isImage: true,
-                  pickedImage: { uri: res?.assets[0].uri, data: res?.assets[0] },
+                  pickedImage: {uri: res?.assets[0].uri, data: res?.assets[0]},
                 });
               }
             },
@@ -140,25 +149,29 @@ class ReportScreen extends Component {
               } else {
                 this.setState({
                   isImage: true,
-                  pickedImage: { uri: res?.assets[0].uri, data: res?.assets[0] },
+                  pickedImage: {uri: res?.assets[0].uri, data: res?.assets[0]},
                 });
               }
             },
           );
         }
       } else {
-        Alert.alert('Need Permissions ', 'Camera and storage permissions are required.', [
-          {
-            text: 'Cancel',
-            onPress: () => console.log('Cancel Pressed'),
-          },
-          {
-            text: 'Open Setting',
-            onPress: () => {
-              this._openSettings();
+        Alert.alert(
+          'Need Permissions ',
+          'Camera and storage permissions are required.',
+          [
+            {
+              text: 'Cancel',
+              onPress: () => console.log('Cancel Pressed'),
             },
-          },
-        ]);
+            {
+              text: 'Open Setting',
+              onPress: () => {
+                this._openSettings();
+              },
+            },
+          ],
+        );
       }
     } catch (e) {
       console.log(e);
@@ -228,6 +241,46 @@ class ReportScreen extends Component {
   //     }
   // }
 
+  _validateForm = () => {
+    const {SrNo, Description, mobile_number, reporter_name, pickedImage} =
+      this.state;
+
+    if (!pickedImage || !pickedImage.uri) {
+      Alert.alert('Validation Error', 'Please upload coupon image');
+      return false;
+    }
+
+    if (!SrNo.trim()) {
+      Alert.alert('Validation Error', 'Please enter Serial Number');
+      return false;
+    }
+
+    if (!Description.trim()) {
+      Alert.alert('Validation Error', 'Please enter description');
+      return false;
+    }
+
+    if (!reporter_name.trim()) {
+      Alert.alert('Validation Error', 'Please enter reporter name');
+      return false;
+    }
+
+    if (!mobile_number.trim()) {
+      Alert.alert('Validation Error', 'Please enter mobile number');
+      return false;
+    }
+
+    if (mobile_number.length !== 10) {
+      Alert.alert(
+        'Validation Error',
+        'Please enter valid 10 digit mobile number',
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   _openSettings() {
     if (Platform.OS == 'ios') {
       Linking.canOpenURL('app-settings:')
@@ -244,7 +297,7 @@ class ReportScreen extends Component {
     }
   }
   _onPressSendButton = () => {
-    this.setState({ showHideLoading: true });
+    this.setState({showHideLoading: true});
     const photo = {
       uri: this.state.pickedImage.uri,
       type: this.state.pickedImage.data.type
@@ -293,13 +346,14 @@ class ReportScreen extends Component {
         Accept: 'application/json',
         'Content-Type': 'multipart/form-data',
         apikey: APIKEY,
-        Cookie: "ci_session=a%3A5%3A%7Bs%3A10%3A%22session_id%22%3Bs%3A32%3A%22da38a377f3409665e3434080849b240b%22%3Bs%3A10%3A%22ip_address%22%3Bs%3A13%3A%2245.248.66.185%22%3Bs%3A10%3A%22user_agent%22%3Bs%3A21%3A%22PostmanRuntime%2F7.51.0%22%3Bs%3A13%3A%22last_activity%22%3Bi%3A1769480053%3Bs%3A9%3A%22user_data%22%3Bs%3A0%3A%22%22%3B%7D46ec330ecc43e5641051d7fee2d2feb1b305e9e1",
+        Cookie:
+          'ci_session=a%3A5%3A%7Bs%3A10%3A%22session_id%22%3Bs%3A32%3A%22da38a377f3409665e3434080849b240b%22%3Bs%3A10%3A%22ip_address%22%3Bs%3A13%3A%2245.248.66.185%22%3Bs%3A10%3A%22user_agent%22%3Bs%3A21%3A%22PostmanRuntime%2F7.51.0%22%3Bs%3A13%3A%22last_activity%22%3Bi%3A1769480053%3Bs%3A9%3A%22user_data%22%3Bs%3A0%3A%22%22%3B%7D46ec330ecc43e5641051d7fee2d2feb1b305e9e1',
       },
       body: formData,
     })
       .then(response => response.json())
       .then(responseJson => {
-        this.setState({ showHideLoading: false });
+        this.setState({showHideLoading: false});
         console.log('responseJson', responseJson);
         // console.log(responseJson);
         if (responseJson.status == 403) {
@@ -307,6 +361,18 @@ class ReportScreen extends Component {
           this.props.navigation.navigate('LoginScreen');
           AsyncStorage.clear();
           return;
+        } else if (responseJson.status == 400) {
+          Alert.alert(
+            strings('login.ScanScreenAlertTitle'),
+            responseJson.message,
+            [
+              // { text: 'NO', onPress: () => console.log('Cancel Pressed'), style: 'cancel' },
+              {
+                text: strings('login.OK'),
+              },
+            ],
+            {cancelable: false},
+          );
         } else if (responseJson.message) {
           // alert(JSON.stringify(responseJson.message))
           Alert.alert(
@@ -317,18 +383,18 @@ class ReportScreen extends Component {
               {
                 text: strings('login.OK'),
                 onPress: () => {
-                  this.props.navigation.navigate('HomeScreen');
+                  this.props.navigation.navigate('LoginScreen');
                 },
               },
             ],
-            { cancelable: false },
+            {cancelable: false},
           );
         } else {
           alert(JSON.stringify(responseJson));
         }
       })
       .catch(error => {
-        this.setState({ showHideLoading: false });
+        this.setState({showHideLoading: false});
         alert(error);
       });
   };
@@ -336,20 +402,20 @@ class ReportScreen extends Component {
     if (Platform.OS == 'ios') {
       return (
         <Header
-          style={{ backgroundColor: MyColors.distributorColor, display: 'flex' }}>
+          style={{backgroundColor: MyColors.distributorColor, display: 'flex'}}>
           <Grid>
-            <Col style={{ justifyContent: 'center' }}>
+            <Col style={{justifyContent: 'center'}}>
               <TouchableOpacity
-                onPress={() => this.props.navigation.navigate('HomeScreen')}>
+                onPress={() => this.props.navigation.navigate('LoginScreen')}>
                 <Icon
                   type="FontAwesome5"
                   name="arrow-left"
-                  style={{ fontSize: 20, color: '#FFFFFF' }}
+                  style={{fontSize: 20, color: '#FFFFFF'}}
                 />
               </TouchableOpacity>
             </Col>
-            <Col size={15} style={{ justifyContent: 'center', paddingRight: 20 }}>
-              <Title style={{ color: '#FFFFFF' }}>
+            <Col size={15} style={{justifyContent: 'center', paddingRight: 20}}>
+              <Title style={{color: '#FFFFFF'}}>
                 {strings('login.report_screen_title')}
               </Title>
             </Col>
@@ -358,19 +424,19 @@ class ReportScreen extends Component {
       );
     } else {
       return (
-        <Header style={{ backgroundColor: MyColors.distributorColor }}>
-          <Left style={{ flex: 0.1 }}>
+        <Header style={{backgroundColor: MyColors.distributorColor}}>
+          <Left style={{flex: 0.1}}>
             <TouchableOpacity
-              onPress={() => this.props.navigation.navigate('HomeScreen')}>
+              onPress={() => this.props.navigation.navigate('LoginScreen')}>
               <Icon
                 type="FontAwesome5"
                 name="arrow-left"
-                style={{ fontSize: 20, color: '#FFFFFF', paddingLeft: 10 }}
+                style={{fontSize: 20, color: '#FFFFFF', paddingLeft: 10}}
               />
             </TouchableOpacity>
           </Left>
-          <Body style={{ flex: 0.9, alignItems: 'center' }}>
-            <Title style={{ color: '#FFFFFF', fontSize: 16, marginLeft: -10 }}>
+          <Body style={{flex: 0.9, alignItems: 'center'}}>
+            <Title style={{color: '#FFFFFF', fontSize: 16, marginLeft: -10}}>
               {strings('login.report_screen_title')}
             </Title>
           </Body>
@@ -391,7 +457,7 @@ class ReportScreen extends Component {
           barStyle="light-content"
         />
         <View
-          style={{ flexDirection: 'row', flex: 1, margin: 10, marginTop: 20 }}>
+          style={{flexDirection: 'row', flex: 1, margin: 10, marginTop: 20}}>
           <TouchableOpacity
             onPress={() => {
               Alert.alert('Pick an image ', '', [
@@ -422,19 +488,19 @@ class ReportScreen extends Component {
             {this.state.pickedImage ? (
               <Image
                 source={this.state.pickedImage}
-                style={{ width: 195, height: 198 }}
+                style={{width: 195, height: 198}}
                 resizeMode="contain"
               />
             ) : (
-              <View style={{ flex: 1, justifyContent: 'center' }}>
+              <View style={{flex: 1, justifyContent: 'center'}}>
                 <Icon
                   type="FontAwesome"
                   name="camera-retro"
-                  style={{ fontSize: 25, alignSelf: 'center' }}
+                  style={{fontSize: 25, alignSelf: 'center'}}
                 />
-                <Text style={{ textAlignVertical: 'center', marginTop: 10 }}>
+                <Text style={{textAlignVertical: 'center', marginTop: 10}}>
                   {strings('login.uploadImage')}
-                  <Text style={{ color: 'red' }}>*</Text>
+                  <Text style={{color: 'red'}}>*</Text>
                 </Text>
               </View>
             )}
@@ -480,7 +546,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}>
           {strings('login.report_screen_srNo')}
-          <Text style={{ color: 'red' }}>* </Text>:
+          <Text style={{color: 'red'}}>* </Text>:
         </Label>
 
         <TextInput
@@ -495,7 +561,7 @@ class ReportScreen extends Component {
           }}
           placeholder={strings('login.report_screen_srNo')}
           // autoFocus={true}
-          onChangeText={SrNo => this.setState({ SrNo })}
+          onChangeText={SrNo => this.setState({SrNo})}
         />
         <Label
           style={{
@@ -504,7 +570,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}>
           {strings('login.report_screen_descr')}
-          <Text style={{ color: 'red' }}>* </Text>:
+          <Text style={{color: 'red'}}>* </Text>:
         </Label>
         <TextInput
           style={{
@@ -517,7 +583,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}
           placeholder={strings('login.report_screen_descr')}
-          onChangeText={Description => this.setState({ Description })}
+          onChangeText={Description => this.setState({Description})}
         />
         <Label
           style={{
@@ -526,7 +592,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}>
           Name
-          <Text style={{ color: 'red' }}>* </Text>:
+          <Text style={{color: 'red'}}>* </Text>:
         </Label>
         <TextInput
           style={{
@@ -539,7 +605,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}
           placeholder="Enter Reporter Name"
-          onChangeText={reporter_name => this.setState({ reporter_name })}
+          onChangeText={reporter_name => this.setState({reporter_name})}
         />
         <Label
           style={{
@@ -548,7 +614,7 @@ class ReportScreen extends Component {
             color: this.props.enableDarkTheme ? 'white' : 'black',
           }}>
           Mobile Number
-          <Text style={{ color: 'red' }}>* </Text>:
+          <Text style={{color: 'red'}}>* </Text>:
         </Label>
         <TextInput
           style={{
@@ -562,9 +628,8 @@ class ReportScreen extends Component {
           }}
           placeholder="Enter Mobile Number"
           keyboardType="phone-pad"
-          onChangeText={mobile_number => this.setState({ mobile_number })}
+          onChangeText={mobile_number => this.setState({mobile_number})}
         />
-        
 
         <View
           style={{
@@ -573,9 +638,26 @@ class ReportScreen extends Component {
             flex: 1,
             alignSelf: 'center',
           }}>
+          <Button
+            style={{
+              backgroundColor: MyColors.distributorColor,
+              borderRadius: 20,
+              width: 200,
+            }}
+            onPress={this.getDataFromAPi}>
+              <Text
+              style={{
+                textAlign: 'center',
+                flex: 1,
+                fontWeight: 'bold',
+                fontSize: 18,
+              }}>
+              {strings('login.sendButton')}
+            </Text>
+            </Button>
           {/* <Button style={{ backgroundColor: "#e43c22" }} onPress={this.getDataFromAPi} title={strings('login.sendButton')} disabled={this.state.SrNo.trim().length > 0 && this.state.Description.trim().length > 0
                         && this.state.pickedImage.uri && this.state.pickedImage1.uri ? false : true} /> */}
-          <Button
+          {/* <Button
             style={{
               backgroundColor: MyColors.distributorColor,
               borderRadius: 20,
@@ -584,10 +666,10 @@ class ReportScreen extends Component {
             onPress={this.getDataFromAPi}
             disabled={
               this.state.SrNo.trim().length > 0 &&
-                this.state.Description.trim().length > 0 &&
-                this.state.mobile_number.trim().length > 0 &&
-                this.state.reporter_name.trim().length > 0 &&
-                this.state.pickedImage.uri
+              this.state.Description.trim().length > 0 &&
+              this.state.mobile_number.trim().length > 0 &&
+              this.state.reporter_name.trim().length > 0 &&
+              this.state.pickedImage.uri
                 ? false
                 : true
             }>
@@ -600,7 +682,7 @@ class ReportScreen extends Component {
               }}>
               {strings('login.sendButton')}
             </Text>
-          </Button>
+          </Button> */}
         </View>
       </ScrollView>
     );

@@ -293,7 +293,7 @@ class ScanScreen extends Component {
                 redeemMethodsP = lResponseData.productData;
                 redeemMethodsUs = lResponseData.userData;
                 console.log("=========response" , JSON.stringify(lResponseData , null,2))
-                this.setState({isSuccess: true , cashDetails : redeemMethodsT.value, productName : redeemMethodsP.product_name , productDenomination : redeemMethodsP.product_denomination , scanningBody : lResponseData.message , businessName: redeemMethodsUs.business_name , endDate : redeemMethodsT?.end_date})
+                this.setState({isSuccess: true , cashDetails : redeemMethodsT.value, productName : redeemMethodsP.product_name , productDenomination : redeemMethodsP.product_denomination , scanningBody : lResponseData.message , businessName: redeemMethodsUs.business_name ,userMobile: redeemMethodsUs.mobile_no, endDate : redeemMethodsT?.end_date})
                 // this.setState({ redeemMethods: lResponseData.redeemMethodsT, redeemType: redeemMethodsT[0].redeem_type })
                 // for (var i = 0; i < redeemMethodsT.length; i++) {
                 //     if (redeemMethodsT[i].redeem_type == "1") {

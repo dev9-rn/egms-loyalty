@@ -62,7 +62,8 @@ const styles = StyleSheet.create({
     marginTop: 18,
     marginLeft: 5,
     // backgroundColor: 'orange',
-    flex:0.8
+    flex:0.8,
+    color: '#000000',
   }
 });
 

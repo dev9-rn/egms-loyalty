@@ -52,7 +52,7 @@
         "paymentOptions_screen_acNo": "A/C No",
         "paymentOptions_screen_ifsc_code": "IFSC Code",
         "report_screen_title": "REPORT",
-        "report_screen_srNo": "Sr.No",
+        "report_screen_srNo": "Serial Number",
         "report_screen_descr": "Description",
         "report_history_fromDate": "From Date",
         "report_history_toDate": "To Date",
